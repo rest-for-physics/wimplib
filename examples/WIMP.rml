@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wimp>
+    <TRestWimpSensitivity name="WIMPSensitivity" title="WIMP Sensitivity" verboseLevel="info">
+        <addElement nucleusName="Ne" anum="20.1797" znum="10" abundance="0.95"/>
+        <addElement nucleusName="C" anum="12.0107" znum="6" abundance="0.04"/>
+        <addElement nucleusName="H" anum="1.00784" znum="1" abundance="0.01"/>
+        <parameter name="wimpDensity" value="0.3"/>
+        <parameter name="labVelocity" value="232"/>
+        <parameter name="rmsVelocity" value="220"/>
+        <parameter name="escapeVelocity" value="544"/>
+        <parameter name="exposure" value="116.8"/>
+        <parameter name="backgroundLevel" value="1"/>
+        <parameter name="energySpectra" value="(0,2)"/>
+        <parameter name="energySpectraStep" value="0.01"/>
+        <parameter name="energyRange" value="(0.1,1.1)"/>
+        <parameter name="useQuenchingFactor" value="true"/>
+    </TRestWimpSensitivity>
+</wimp>
