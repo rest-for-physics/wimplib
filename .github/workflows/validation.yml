@@ -21,15 +21,6 @@ defaults:
 jobs:
   framework-validation:
     uses: rest-for-physics/framework/.github/workflows/validation.yml@master
-  
-  libCheck:
-    name: Validate library
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/lobis/root-geant4-garfield:rest-for-physics
-    steps:
-      - uses: actions/checkout@v3
-      - run: python3 pipeline/validateLibrary.py .
 
   build-wimplib:
     name: Build only wimplib
