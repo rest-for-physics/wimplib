@@ -60,7 +60,6 @@ class TRestWimpSensitivity : public TRestMetadata {
     std::map<std::string, TH1D*> quenchingFactor;  //!
 
    public:
-
     TRestWimpSensitivity(const char* configFilename, const std::string& name = "");
 
     ~TRestWimpSensitivity();

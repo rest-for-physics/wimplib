@@ -10,7 +10,7 @@ void REST_WIMP_RecoilRate(const std::string& rmlFile, const double wimpMass = 1,
     auto recoilRate = WS.GetRecoilSpectra(wimpMass, crossSection);
 
     std::stringstream ss;
-    ss << "WimpSensitivity_WimpMass_"<<wimpMass<<"_CrossSect_"<<crossSection;
+    ss << "WimpSensitivity_WimpMass_" << wimpMass << "_CrossSect_" << crossSection;
 
     TCanvas* can = new TCanvas(ss.str().c_str(), ss.str().c_str());
     TLegend* leg = new TLegend(0.1, 0.7, 0.3, 0.9);
