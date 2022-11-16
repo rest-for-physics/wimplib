@@ -23,7 +23,7 @@
 //////////////////////////////////////////////////////////////////////////
 /// TRestWimpUtils defines several functions to calculate different WIMP
 /// parameters, based on WimpRoot code written by I.G. Irastorza, some
-/// functions are derived from a D. Diez-Ibañez phython code.
+/// functions are derived from a D. Diez-Ibañez python code.
 ///
 /// Note units are keV for the recoil energy, GeV for the WIMP mass,
 /// km/s for the WIMP velocity and cm-2 for the cross section.
@@ -99,16 +99,45 @@ const double TRestWimpUtils::GetVMin(const double wimpMass, const double Anum, c
 
 //////////////////////////////////////////////////
 /// \brief Get velocity distribution for a given
-/// WIMP velocity
+/// Velocity distribution in Earth frame, f(velocity) in units of 1/(km/s), velocity in km/s
+/// Result is the integral for all solid angle of the Boltzmann velocity distribution in Earth frame*/
 ///
 const double TRestWimpUtils::GetVelocityDistribution(const double v, const double vLab, const double vRMS,
                                                      const double vEscape) {
-    const double vAdim = vRMS / vLab;
-    const double Nesc = erf(vAdim) - (2. / sqrt(TMath::Pi())) * (vAdim)*exp(-vAdim * vAdim);
-    const double xMax = std::min(1., (vEscape * vEscape - vLab * vLab - v * v) / (2. * vLab * v));
-    return v * Nesc / (vLab * vRMS * sqrt(TMath::Pi())) *
+    if (v > vLab + vEscape) return 0;
+
+    const double vAdim = vEscape / vRMS;
+    const double Nesc =
+        erf(vAdim) - 2. / sqrt(TMath::Pi()) * vAdim *
+                         exp(-vAdim * vAdim);  // Nesc=1 for vEscape=infinity (see Lewin&Smith appendix 1a)
+    // xMax = max(cosTheta) to meet [vec(v) + vec(vLab)]^2 < vEscape^2 boundary condition (also xMax in
+    // [-1,+1])
+    const double xMax =
+        std::max(-1., std::min(1., (vEscape * vEscape - vLab * vLab - v * v) / (2. * vLab * v)));
+
+    return v / Nesc / (vLab * vRMS * sqrt(TMath::Pi())) *
            (exp(-(v - vLab) * (v - vLab) / (vRMS * vRMS)) -
             exp(-(v * v + vLab * vLab + 2 * v * vLab * xMax) / (vRMS * vRMS)));
+}
+
+//////////////////////////////////////////////////
+/// \brief Differential cross section without Helm form factor in energy,
+/// in [cm/keV]. E in keV, velocity in km/s,
+/// wimp mass in Gev/c^2, cross section per
+/// nucleon in cm^2, Anum in atomic units (amu)
+/// (or atomic weight)
+/// Useful function for performance enhancement
+///
+const double TRestWimpUtils::GetDifferentialCrossSectionNoHelmFormFactor(const double wimpMass,
+                                                                         const double crossSection,
+                                                                         const double velocity,
+                                                                         const double Anum) {
+    const double cs = GetRelativeNuclearCS(wimpMass, Anum) * crossSection;
+    const double reducedMass = GetReducedMass(wimpMass, Anum);
+    const double Emax = 1E6 / LIGHT_SPEED / LIGHT_SPEED * 2. * reducedMass * reducedMass * velocity *
+                        velocity / (Anum * GEV_PER_UMA);
+
+    return cs / Emax;
 }
 
 //////////////////////////////////////////////////
@@ -121,13 +150,10 @@ const double TRestWimpUtils::GetVelocityDistribution(const double v, const doubl
 const double TRestWimpUtils::GetDifferentialCrossSection(const double wimpMass, const double crossSection,
                                                          const double velocity, const double recoilEnergy,
                                                          const double Anum) {
-    const double cs = GetRelativeNuclearCS(wimpMass, Anum) * crossSection;
-    const double reducedMass = GetReducedMass(wimpMass, Anum);
-    const double Emax = 1E6 / LIGHT_SPEED / LIGHT_SPEED * 2. * reducedMass * reducedMass * velocity *
-                        velocity / (Anum * GEV_PER_UMA);
     const double formFactor = GetHelmFormFactor(recoilEnergy, Anum);
 
-    return cs * formFactor * formFactor / Emax;
+    return GetDifferentialCrossSectionNoHelmFormFactor(wimpMass, crossSection, velocity, Anum) * formFactor *
+           formFactor;
 }
 
 //////////////////////////////////////////////////

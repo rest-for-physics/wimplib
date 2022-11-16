@@ -31,7 +31,7 @@ namespace TRestWimpUtils {
 /// Physics constants
 constexpr double GEV_PER_UMA = 0.93149432;
 constexpr double HC_KEV_FM = 197327.053;
-constexpr double LIGHT_SPEED = 300000.0;  // km/s
+constexpr double LIGHT_SPEED = 299792.458;  // km/s
 constexpr double SECONDS_PER_DAY = 86400;
 constexpr double N_AVOGADRO = 6.0221367E23;
 constexpr double MBARN_PER_GEVM2 = 0.38937966;
@@ -46,6 +46,8 @@ const double Bessel(const double x);
 const double GetVMin(const double wimpMass, const double Anum, const double recoilEnergy);
 const double GetVelocityDistribution(const double v, const double vLab, const double vRMS,
                                      const double vEscape);
+const double GetDifferentialCrossSectionNoHelmFormFactor(const double wimpMass, const double crossSection,
+                                                         const double velocity, const double Anum);
 const double GetDifferentialCrossSection(const double wimpMass, const double crossSection,
                                          const double velocity, const double recoilEnergy, const double Anum);
 const double GetRecoilRate(const double wimpMass, const double crossSection, const double recoilEnergy,
