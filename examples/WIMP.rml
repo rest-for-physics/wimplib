@@ -9,7 +9,7 @@
         <parameter name="rmsVelocity" value="220"/>
         <parameter name="escapeVelocity" value="544"/>
         <parameter name="exposure" value="116.8"/>
-        <parameter name="backgroundLevel" value="1"/>
+        <parameter name="background" value="1"/>
         <parameter name="energySpectra" value="(0,2)"/>
         <parameter name="energySpectraStep" value="0.01"/>
         <parameter name="energyRange" value="(0.1,1.1)"/>
