@@ -42,15 +42,16 @@
 /// <hr>
 ///
 
+#include "TRestWimpUtils.h"
+
 #include <TMath.h>
-#include <TRestWimpUtils.h>
 
 //////////////////////////////////////////////////
 /// \brief Get relative nuclear cross section
 /// within a WIMP and a nucleon, assuming
-/// SCALAR INTERACION
+/// SCALAR INTERACTION
 ///
-const double TRestWimpUtils::GetRelativeNuclearCS(const double wimpMass, const double Anum) {
+double TRestWimpUtils::GetRelativeNuclearCS(const double wimpMass, const double Anum) {
     const double reducedMass = GetReducedMass(wimpMass, Anum);
     const double reducedMassSingle = GetReducedMass(wimpMass, 1.);
     return pow(Anum * GEV_PER_UMA * reducedMass / reducedMassSingle, 2.);
@@ -60,7 +61,7 @@ const double TRestWimpUtils::GetRelativeNuclearCS(const double wimpMass, const d
 /// \brief Get WIMP-nucleon reduced mass
 /// (WIMP mass in GeV)
 ///
-const double TRestWimpUtils::GetReducedMass(const double wimpMass, const double Anum) {
+double TRestWimpUtils::GetReducedMass(const double wimpMass, const double Anum) {
     // WIMP mass in GeV
     return wimpMass * GEV_PER_UMA * Anum / (wimpMass + Anum * GEV_PER_UMA);
 }
@@ -70,7 +71,7 @@ const double TRestWimpUtils::GetReducedMass(const double wimpMass, const double 
 /// energy and nucleous target, mass recoil
 /// energy in keV
 ///
-const double TRestWimpUtils::GetHelmFormFactor(const double recoilEnergy, const double Anum) {
+double TRestWimpUtils::GetHelmFormFactor(const double recoilEnergy, const double Anum) {
     // Momentum transfer in keV
     const double q = sqrt(2. * Anum * GEV_PER_UMA * 1E6 * recoilEnergy);
     const double s = 0.9;  // Femtometers-Skin thickness of the nucleus
@@ -92,7 +93,7 @@ const double TRestWimpUtils::GetHelmFormFactor(const double recoilEnergy, const 
 /// for a WIMP to create a recoil energy (keV)
 /// higher than recoilEnergy
 ///
-const double TRestWimpUtils::GetVMin(const double wimpMass, const double Anum, const double recoilEnergy) {
+double TRestWimpUtils::GetVMin(const double wimpMass, const double Anum, const double recoilEnergy) {
     const double reducedMass = GetReducedMass(wimpMass, Anum);
     return sqrt(Anum * GEV_PER_UMA * recoilEnergy * 1E-6 / (2. * reducedMass * reducedMass)) * LIGHT_SPEED;
 }
@@ -101,8 +102,8 @@ const double TRestWimpUtils::GetVMin(const double wimpMass, const double Anum, c
 /// \brief Get velocity distribution for a given
 /// WIMP velocity
 ///
-const double TRestWimpUtils::GetVelocityDistribution(const double v, const double vLab, const double vRMS,
-                                                     const double vEscape) {
+double TRestWimpUtils::GetVelocityDistribution(const double v, const double vLab, const double vRMS,
+                                               const double vEscape) {
     const double vAdim = vRMS / vLab;
     const double Nesc = erf(vAdim) - (2. / sqrt(TMath::Pi())) * (vAdim)*exp(-vAdim * vAdim);
     const double xMax = std::min(1., (vEscape * vEscape - vLab * vLab - v * v) / (2. * vLab * v));
@@ -118,9 +119,9 @@ const double TRestWimpUtils::GetVelocityDistribution(const double v, const doubl
 /// nucleon in cm^2, Anum in atomic units (amu)
 /// (or atomic weight)
 ///
-const double TRestWimpUtils::GetDifferentialCrossSection(const double wimpMass, const double crossSection,
-                                                         const double velocity, const double recoilEnergy,
-                                                         const double Anum) {
+double TRestWimpUtils::GetDifferentialCrossSection(const double wimpMass, const double crossSection,
+                                                   const double velocity, const double recoilEnergy,
+                                                   const double Anum) {
     const double cs = GetRelativeNuclearCS(wimpMass, Anum) * crossSection;
     const double reducedMass = GetReducedMass(wimpMass, Anum);
     const double Emax = 1E6 / LIGHT_SPEED / LIGHT_SPEED * 2. * reducedMass * reducedMass * velocity *
@@ -135,10 +136,10 @@ const double TRestWimpUtils::GetDifferentialCrossSection(const double wimpMass, 
 /// and recoil energy, note that the recoil rate
 /// is normalized by c/kg/day
 ///
-const double TRestWimpUtils::GetRecoilRate(const double wimpMass, const double crossSection,
-                                           const double recoilEnergy, const double Anum, const double vLab,
-                                           const double vRMS, const double vEscape, const double wimpDensity,
-                                           const double abundance) {
+double TRestWimpUtils::GetRecoilRate(const double wimpMass, const double crossSection,
+                                     const double recoilEnergy, const double Anum, const double vLab,
+                                     const double vRMS, const double vEscape, const double wimpDensity,
+                                     const double abundance) {
     const double vMin = GetVMin(wimpMass, Anum, recoilEnergy);
     const double vMax = vEscape + vLab;
     const double nNuclei = abundance * N_AVOGADRO * 1E3 / Anum;  // Number of atoms
@@ -163,8 +164,7 @@ const double TRestWimpUtils::GetRecoilRate(const double wimpMass, const double c
 /// \brief Get Lindhard quenching factor for a
 /// given recoil energy (keV) and target
 ///
-const double TRestWimpUtils::GetQuenchingFactor(const double recoilEnergy, const double Anum,
-                                                const double Znum) {
+double TRestWimpUtils::GetQuenchingFactor(const double recoilEnergy, const double Anum, const double Znum) {
     const double deltaE = 0.0001, Emin = 0.1, resolution = 0.1;  // keV
     double g, Er = recoilEnergy, Ev;
 
