@@ -39,19 +39,17 @@ constexpr double CM2_PER_MBARN = 1e-27;
 constexpr double FERMI_CONSTANT = 1.16639e-5;  // GeV-2
 
 /// Generic functions for different calculations
-const double GetRelativeNuclearCS(const double wimpMass, const double Anum);
-const double GetReducedMass(const double wimpMass, const double Anum);
-const double GetHelmFormFactor(const double recoilEnergy, const double Anum);
-const double Bessel(const double x);
-const double GetVMin(const double wimpMass, const double Anum, const double recoilEnergy);
-const double GetVelocityDistribution(const double v, const double vLab, const double vRMS,
-                                     const double vEscape);
-const double GetDifferentialCrossSection(const double wimpMass, const double crossSection,
-                                         const double velocity, const double recoilEnergy, const double Anum);
-const double GetRecoilRate(const double wimpMass, const double crossSection, const double recoilEnergy,
-                           const double Anum, const double vLab, const double vRMS, const double vEscape,
-                           const double wimpDensity, const double abundance);
-const double GetQuenchingFactor(const double recoilEnergy, const double Anum, const double Znum);
+double GetRelativeNuclearCS(double wimpMass, double Anum);
+double GetReducedMass(double wimpMass, double Anum);
+double GetHelmFormFactor(double recoilEnergy, double Anum);
+double Bessel(double x);
+double GetVMin(double wimpMass, double Anum, double recoilEnergy);
+double GetVelocityDistribution(double v, double vLab, double vRMS, double vEscape);
+double GetDifferentialCrossSection(double wimpMass, double crossSection, double velocity, double recoilEnergy,
+                                   double Anum);
+double GetRecoilRate(double wimpMass, double crossSection, double recoilEnergy, double Anum, double vLab,
+                     double vRMS, double vEscape, double wimpDensity, double abundance);
+double GetQuenchingFactor(double recoilEnergy, double Anum, double Znum);
 
 }  // namespace TRestWimpUtils
 
