@@ -252,7 +252,7 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 
         for (int i = 1; i < recoilSpc.GetNbinsX(); i++) {
             double recoilEnergy = recoilSpc.GetBinCenter(i);
-            const double recoilRate = recoilSpc.GetBinContent(i);
+            // const double recoilRate = recoilSpc.GetBinContent(i);
             if (fUseQuenchingFactor)
                 recoilEnergy *= quenchingFactor[std::string(nucl.fNucleusName)]->GetBinContent(i);
 
