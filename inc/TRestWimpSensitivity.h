@@ -23,10 +23,9 @@
 #ifndef RestCore_TRestWimpSensitivity
 #define RestCore_TRestWimpSensitivity
 
+#include <TH1D.h>
 #include <TRestMetadata.h>
 #include <TRestWimpNucleus.h>
-
-#include <TH1D.h>
 
 /// Container class for WIMP metadata
 ///
@@ -60,7 +59,7 @@ class TRestWimpSensitivity : public TRestMetadata {
     std::map<std::string, TH1D*> quenchingFactor;  //!
 
    public:
-    TRestWimpSensitivity(const char* configFilename, const std::string& name = "");
+    explicit TRestWimpSensitivity(const char* configFilename, const std::string& name = "");
 
     ~TRestWimpSensitivity();
 
@@ -69,11 +68,11 @@ class TRestWimpSensitivity : public TRestMetadata {
     void PrintMetadata() override;
 
     void ReadNuclei();
-    const Double_t GetSensitivity(const double wimpMass);
+    const Double_t GetSensitivity(double wimpMass);
     void CalculateQuenchingFactor();
     const std::string BuildOutputFileName(const std::string& extension = ".txt");
 
-    std::map<std::string, TH1D*> GetRecoilSpectra(const double wimpMass, const double crossSection);
+    std::map<std::string, TH1D*> GetRecoilSpectra(double wimpMass, double crossSection);
     std::map<std::string, TH1D*> GetFormFactor();
     inline auto GetQuenchingFactor() { return quenchingFactor; }
 
