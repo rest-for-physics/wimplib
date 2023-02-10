@@ -1,13 +1,8 @@
 name: Validation
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-  release:
-
   workflow_dispatch:
+  workflow_call:
 
 env:
   CMAKE_BUILD_TYPE: Release
@@ -19,8 +14,6 @@ defaults:
     shell: bash
 
 jobs:
-  framework-validation:
-    uses: rest-for-physics/framework/.github/workflows/validation.yml@master
 
   build-wimplib:
     name: Build only wimplib
