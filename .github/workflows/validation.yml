@@ -15,12 +15,9 @@ defaults:
     shell: bash
 
 jobs:
-
-  build-wimplib:
-    name: Build only wimplib
+  precommit-config:
+    name: Validate pre-commit config
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/lobis/root-geant4-garfield:rest-for-physics
     steps:
       - uses: rest-for-physics/framework/.github/actions/checkout@submodule-validation
         with:
@@ -31,8 +28,15 @@ jobs:
         run: |
           cd ${{ env.WIMP_LIB_PATH }}
           curl https://raw.githubusercontent.com/rest-for-physics/framework/master/scripts/validatePreCommitConfig.py | python
+
+  build-wimplib:
+    name: Build only wimplib
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/lobis/root-geant4-garfield:rest-for-physics
+    steps:
       - name: Build and install
-        uses: rest-for-physics/framework/.github/actions/build@master
+      - uses: rest-for-physics/framework/.github/actions/build@master
         with:
           cmake-flags: "-DCMAKE_INSTALL_PREFIX=${{ env.REST_PATH }} -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} -DREST_WELCOME=ON -DRESTLIB_WIMP=ON"
           branch: ${{ env.BRANCH_NAME }}
