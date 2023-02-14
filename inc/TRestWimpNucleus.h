@@ -23,9 +23,9 @@
 #ifndef RestCore_TRestWimpNucleus
 #define RestCore_TRestWimpNucleus
 
-#include <iostream>
-
 #include <TString.h>
+
+#include <iostream>
 
 /// A class to store different nucleus parameters
 class TRestWimpNucleus {

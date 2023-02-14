@@ -23,10 +23,9 @@
 #ifndef RestCore_TRestWimpSensitivity
 #define RestCore_TRestWimpSensitivity
 
+#include <TH1D.h>
 #include <TRestMetadata.h>
 #include <TRestWimpNucleus.h>
-
-#include <TH1D.h>
 
 /// Container class for WIMP metadata
 ///
