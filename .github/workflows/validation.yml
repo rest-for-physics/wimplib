@@ -19,7 +19,7 @@ jobs:
     name: Validate pre-commit config
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/lobis/root-geant4-garfield:rest-for-physics
+      image: ghcr.io/rest-for-physics/root:latest
     steps:
       - name: Checkout wimplib
         uses: rest-for-physics/framework/.github/actions/checkout@master
@@ -36,7 +36,7 @@ jobs:
     name: Build only wimplib
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/lobis/root-geant4-garfield:rest-for-physics
+      image: ghcr.io/rest-for-physics/root:latest
     steps:
       - name: Build and install
         uses: rest-for-physics/framework/.github/actions/build@master
