@@ -218,7 +218,7 @@ std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double
             rate += diffRate * velStep;
             // save (in 3rd element of tEnergyVminRate tuples) the integral from minimun vMin to each vMin,
             // idem integral_min(vMin)^vMin
-            while (j < tEnergyVminRate.size()) {
+            while (j < (int)tEnergyVminRate.size()) {
                 const double vmin = std::get<1>(tEnergyVminRate.at(j));
                 if (vmin < v) {
                     // std::get<2>(tEnergyVminRate.at(j)) = rate; //les precise
@@ -238,23 +238,11 @@ std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double
         }
 
         // copy results to recoilMap
-
-        /*//opcion segura pero ligeramente más costosa
-        for (int i = 0; i < recoilSpc->GetNbinsX(); i++) {
-            const double recoilEnergy = recoilSpc->GetBinCenter(i);
-            for (int j=0; j < tEnergyVminRate.size(); j++){
-                if (recoilEnergy == std::get<0> (tEnergyVminRate.at(j)) ){
-                    recoilSpc->SetBinContent(i,std::get<2>(tEnergyVminRate.at(j)));
-                    break;
-                }
-            }
-        }*/
-
         j = 0;
         for (int i = 0; i < recoilSpc->GetNbinsX(); i++) {
             const double recoilEnergy = recoilSpc->GetBinCenter(i);
             // const double recoilRate = std::get<2> (tEnergyVminRate.at(i));
-            while (j < tEnergyVminRate.size()) {
+            while (j < (int)tEnergyVminRate.size()) {
                 if (recoilEnergy == std::get<0>(tEnergyVminRate.at(j))) {
                     recoilSpc->SetBinContent(i, std::get<2>(tEnergyVminRate.at(j)));
                     j++;
@@ -278,8 +266,7 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 
     if (fUseQuenchingFactor) CalculateQuenchingFactor();
 
-    const int nBins = (fEnergySpectra.Y() - fEnergySpectra.X()) / fEnergySpectraStep;
-
+    //const int nBins = (fEnergySpectra.Y() - fEnergySpectra.X()) / fEnergySpectraStep;
     double nMeas = 0;
 
     const double crossSection = 1E-45;
@@ -296,7 +283,7 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
                 recoilEnergy *= quenchingFactor[std::string(nucl.fNucleusName)]->GetBinContent(i);
 
             if (recoilEnergy < fEnergyRange.X() || recoilEnergy > fEnergyRange.Y()) continue;
-            nMeas += recoilSpc->GetBinContent(i) * fEnergySpectraStep;
+            nMeas += recoilRate * fEnergySpectraStep;
         }
     }
 
