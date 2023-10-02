@@ -53,7 +53,7 @@
 const double TRestWimpUtils::GetRelativeNuclearCS(const double wimpMass, const double Anum) {
     const double reducedMass = GetReducedMass(wimpMass, Anum);
     const double reducedMassSingle = GetReducedMass(wimpMass, 1.);
-    return pow(Anum * GEV_PER_UMA * reducedMass / reducedMassSingle, 2.);
+    return (Anum * reducedMass / reducedMassSingle) * (Anum * reducedMass / reducedMassSingle);
 }
 
 //////////////////////////////////////////////////
