@@ -208,14 +208,9 @@ std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double
         double rate{0};  // will contain integral from minimun vMin to vMax, idem  integral_min(vMin)^vMax
         const double velStep = 0.1;  // km/s
         int j = 0;
-        for (double v = vMin; v < vMax; v += velStep) {
-            const double flux = 1E5 * v * fWimpDensity / wimpMass;
-            const double diffRate =
-                flux *
-                TRestWimpUtils::GetDifferentialCrossSectionNoHelmFormFactor(wimpMass, crossSection, v,
-                                                                            nucl.fAnum) *
-                TRestWimpUtils::GetVelocityDistribution(v, fLabVelocity, fRmsVelocity, fEscapeVelocity);
-            rate += diffRate * velStep;
+        double flux = 0, diffRate = 0, v = 0;
+        // vMax+velStep to save the rate when v is in interval (vMax-velStep, vMax]
+        for (v = vMin; v < vMax + velStep; v += velStep) { 
             // save (in 3rd element of tEnergyVminRate tuples) the integral from minimun vMin to each vMin,
             // idem integral_min(vMin)^vMin
             while (j < (int)tEnergyVminRate.size()) {
@@ -227,7 +222,15 @@ std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double
                 } else
                     break;
             }
+            flux = 1E5 * v * fWimpDensity / wimpMass;
+            diffRate = flux *
+                TRestWimpUtils::GetDifferentialCrossSectionNoHelmFormFactor(wimpMass, crossSection, v,
+                                                                            nucl.fAnum) *
+                TRestWimpUtils::GetVelocityDistribution(v, fLabVelocity, fRmsVelocity, fEscapeVelocity);
+            rate += diffRate * velStep;
         }
+        rate -= diffRate*(v - vMax); //substract last diffRate*(v - vMax) to obtain the rate from vMin to vMax
+        
         /*obtain the rate (integral from each vMin to vMax) by substracting integral from minimun vMin to each
            vMin to the integral from minimun vMin to vMax
                 idem: integral_vMin^vMax = integral_min(vMin)^vMax - integral_min(vMin)^vMin */
@@ -418,6 +421,6 @@ void TRestWimpSensitivity::PrintMetadata() {
                  << ") Step: " << fEnergySpectraStep << " keV" << RESTendl;
     RESTMetadata << "Sensitivity energy range: (" << fEnergyRange.X() << ", " << fEnergyRange.Y() << ") keV"
                  << RESTendl;
-    RESTMetadata << "Use quenching factor: " << fUseQuenchingFactor << RESTendl;
+    RESTMetadata << "Use quenching factor: " << (fUseQuenchingFactor ? "true" : "false") << RESTendl;
     RESTMetadata << "+++++" << RESTendl;
 }
