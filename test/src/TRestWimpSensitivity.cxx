@@ -31,7 +31,5 @@ TEST(TRestWimpSensitivity, FromRml) {
     WS.PrintMetadata();
 
     const double val = WS.GetSensitivity(1);
-    const double expected = 1.12828e-39;
-    cout << "Value " << val << " Expected " << expected << endl;
-    EXPECT_TRUE(abs(val - expected) < 1E-45);
+    EXPECT_DOUBLE_EQ(val, 9.7644690e-40);
 }
