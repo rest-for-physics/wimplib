@@ -71,6 +71,7 @@ class TRestWimpSensitivity : public TRestMetadata {
     void ReadNuclei();
     const Double_t GetSensitivity(const double wimpMass);
     void CalculateQuenchingFactor();
+    bool isEnergySpectraWideEnough();
     const std::string BuildOutputFileName(const std::string& extension = ".txt");
 
     std::map<std::string, TH1D*> GetRecoilSpectra(const double wimpMass, const double crossSection);

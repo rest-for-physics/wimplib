@@ -269,7 +269,11 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 
     if (fUseQuenchingFactor) CalculateQuenchingFactor();
 
-    //const int nBins = (fEnergySpectra.Y() - fEnergySpectra.X()) / fEnergySpectraStep;
+    if (!isEnergySpectraWideEnough()) {
+        RESTError << "Energy spectra range is not wide enough to match the energy range given." << RESTendl;
+        //return 0;
+    }
+
     double nMeas = 0;
 
     const double crossSection = 1E-45;
@@ -303,6 +307,8 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
     for (auto& [name, histo] : rSpc) delete histo;
     rSpc.clear();
 
+    RESTExtreme << "nMeas = "<< nMeas << " c/kg/day" << RESTendl;
+    RESTExtreme << "bckCounts = "<< bckCounts << RESTendl;
     if (nMeas == 0) return 0;
 
     double signalCounts = 0, prob = 0;
@@ -320,6 +326,8 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 
     const double sensitivity = signalCounts * 1E-45 / (nMeas * fExposure);
 
+    RESTExtreme << "sigCounts = "<< signalCounts << RESTendl;
+    
     return sensitivity;
 }
 
@@ -328,7 +336,17 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 /// stores in a map
 ///
 void TRestWimpSensitivity::CalculateQuenchingFactor() {
-    if (!quenchingFactor.empty()) return;
+    // do not calculate if already calculated (with same energy spectra limits)
+    if (!quenchingFactor.empty()){
+        bool same = true;
+        for (auto& [name, histo] : quenchingFactor)
+            if (histo->GetXaxis()->GetXmin() != fEnergySpectra.X() ||
+                histo->GetXaxis()->GetXmax() != fEnergySpectra.Y() ){
+                same = false;
+                break;
+            }
+        if (same) return;
+    }
 
     std::cout << "Calculating quenching factor " << std::endl;
 
@@ -348,6 +366,22 @@ void TRestWimpSensitivity::CalculateQuenchingFactor() {
         }
         quenchingFactor[std::string(nucl.fNucleusName)] = QF;
     }
+}
+
+
+bool TRestWimpSensitivity::isEnergySpectraWideEnough(){
+    if (!fUseQuenchingFactor) 
+        return fEnergySpectra.X() <= fEnergyRange.X() && fEnergySpectra.Y() >= fEnergyRange.Y();
+
+    CalculateQuenchingFactor();
+    for (auto& nucl : fNuclei) {
+        auto qf = quenchingFactor[std::string(nucl.fNucleusName)];
+        // assuming that Energy_nr * QF(Energy_nr) is a monotonically increasing function
+        if ( qf->GetBinContent(1) * qf->GetBinCenter(1) > fEnergyRange.X() ||
+             qf->GetBinContent(qf->GetNbinsX()-1) * qf->GetBinCenter(qf->GetNbinsX()-1) < fEnergyRange.Y() )
+             return false;
+    }
+    return true;
 }
 
 ///////////////////////////////////////////////
