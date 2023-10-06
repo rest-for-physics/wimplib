@@ -40,6 +40,7 @@
 ///
 
 #include "TRestWimpNucleus.h"
+
 #include "TRestMetadata.h"
 
 ClassImp(TRestWimpNucleus);

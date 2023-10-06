@@ -112,6 +112,7 @@
 ///
 
 #include "TRestWimpSensitivity.h"
+
 #include "TRestWimpUtils.h"
 
 ClassImp(TRestWimpSensitivity);
