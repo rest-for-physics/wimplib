@@ -30,5 +30,6 @@ TEST(TRestWimpSensitivity, FromRml) {
 
     WS.PrintMetadata();
 
-    EXPECT_TRUE(abs(WS.GetSensitivity(1) - 2.9732007e-39) < 1E-45);
+    const double val = WS.GetSensitivity(1);
+    EXPECT_NEAR(val, 9.764469e-40, 1E-46);
 }

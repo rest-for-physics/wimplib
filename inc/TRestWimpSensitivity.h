@@ -70,11 +70,35 @@ class TRestWimpSensitivity : public TRestMetadata {
     void ReadNuclei();
     const Double_t GetSensitivity(const double wimpMass);
     void CalculateQuenchingFactor();
+    bool isEnergySpectraWideEnough();
     const std::string BuildOutputFileName(const std::string& extension = ".txt");
 
     std::map<std::string, TH1D*> GetRecoilSpectra(const double wimpMass, const double crossSection);
     std::map<std::string, TH1D*> GetFormFactor();
     inline auto GetQuenchingFactor() { return quenchingFactor; }
+    inline std::vector<TRestWimpNucleus>& GetNuclei() { return fNuclei; };
+    inline auto GetEnergySpectra() { return fEnergySpectra; }
+    inline auto GetEnergySpectraStep() { return fEnergySpectraStep; }
+    inline auto GetEnergyRange() { return fEnergyRange; }
+    inline auto GetWimpDensity() { return fWimpDensity; }
+    inline auto GetLabVelocity() { return fLabVelocity; }
+    inline auto GetEscapeVelocity() { return fEscapeVelocity; }
+    inline auto GetRmsVelocity() { return fRmsVelocity; }
+    inline auto GetExposure() { return fExposure; }
+    inline auto GetBackground() { return fBackground; }
+    inline auto GetUseQuenchingFactor() { return fUseQuenchingFactor; }
+
+    void SetNuclei(const std::vector<TRestWimpNucleus>& nuclei) { fNuclei = nuclei; }
+    void SetEnergySpectra(const TVector2& energySpectra) { fEnergySpectra = energySpectra; }
+    void SetEnergySpectraStep(const Double_t energySpectraStep) { fEnergySpectraStep = energySpectraStep; }
+    void SetEnergyRange(const TVector2& energyRange) { fEnergyRange = energyRange; }
+    void SetWimpDensity(const Double_t wimpDensity) { fWimpDensity = wimpDensity; }
+    void SetLabVelocity(const Double_t labVelocity) { fLabVelocity = labVelocity; }
+    void SetEscapeVelocity(const Double_t escapeVelocity) { fEscapeVelocity = escapeVelocity; }
+    void SetRmsVelocity(const Double_t rmsVelocity) { fRmsVelocity = rmsVelocity; }
+    void SetExposure(const Double_t exposure) { fExposure = exposure; }
+    void SetBackground(const Double_t background) { fBackground = background; }
+    void SetUseQuenchingFactor(const Bool_t useQuenchingFactor) { fUseQuenchingFactor = useQuenchingFactor; }
 
     ClassDefOverride(TRestWimpSensitivity, 1);
 };

@@ -61,7 +61,7 @@
 ///        <parameter name="rmsVelocity" value="220"/>
 ///        <parameter name="escapeVelocity" value="544"/>
 ///        <parameter name="exposure" value="116.8"/>
-///        <parameter name="backgroundLevel" value="1"/>
+///        <parameter name="background" value="1"/>
 ///        <parameter name="energySpectra" value="(0,2)"/>
 ///        <parameter name="energySpectraStep" value="0.01"/>
 ///        <parameter name="energyRange" value="(0.1,1.1)"/>
@@ -177,6 +177,7 @@ void TRestWimpSensitivity::ReadNuclei() {
 ///////////////////////////////////////////////
 /// \brief Get recoil spectra for a given WIMP
 /// mass and cross section
+/// Better performance version
 ///
 std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double wimpMass,
                                                                     const double crossSection) {
@@ -188,16 +189,76 @@ std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double
         std::string histName = "RecoilSpc_" + std::string(nucl.fNucleusName);
         TH1D* recoilSpc =
             new TH1D(histName.c_str(), histName.c_str(), nBins, fEnergySpectra.X(), fEnergySpectra.Y());
-        for (int i = 1; i < recoilSpc->GetNbinsX(); i++) {
-            const double recoilEnergy = recoilSpc->GetBinCenter(i);
-            const double recoilRate =
-                TRestWimpUtils::GetRecoilRate(wimpMass, crossSection, recoilEnergy, nucl.fAnum, fLabVelocity,
-                                              fRmsVelocity, fEscapeVelocity, fWimpDensity, nucl.fAbundance);
-            recoilSpc->SetBinContent(i, recoilRate);
+
+        // Build vector of tuples=(recoilEnergy, minimum velocity, rate) used in further calculations
+        std::vector<std::tuple<double, double, double>> tEnergyVminRate;
+        for (int i = 0; i < recoilSpc->GetNbinsX(); i++) {
+            double E = recoilSpc->GetBinCenter(i);
+            if (E <= 0) continue;
+            tEnergyVminRate.push_back(
+                std::make_tuple(E, TRestWimpUtils::GetVMin(wimpMass, nucl.fAnum, E), 0));
         }
+
+        const double nNuclei =
+            nucl.fAbundance * TRestWimpUtils::N_AVOGADRO * 1E3 / nucl.fAnum;  // Number of atoms
+        const double vMin = std::get<1>(
+            tEnergyVminRate.at(0));  // element 0 should be the lowest (positive) energy -> lowest vMin
+        const double vMax = fEscapeVelocity + fLabVelocity;
+
+        // calculation of the rate for each recoil energy
+        double rate{0};  // will contain integral from minimun vMin to vMax, idem  integral_min(vMin)^vMax
+        const double velStep = 0.1;  // km/s
+        int j = 0;
+        double flux = 0, diffRate = 0, v = 0;
+        // vMax+velStep to save the rate when v is in interval (vMax-velStep, vMax]
+        for (v = vMin; v < vMax + velStep; v += velStep) {
+            // save (in 3rd element of tEnergyVminRate tuples) the integral from minimun vMin to each vMin,
+            // idem integral_min(vMin)^vMin
+            while (j < (int)tEnergyVminRate.size()) {
+                const double vmin = std::get<1>(tEnergyVminRate.at(j));
+                if (vmin < v) {
+                    // std::get<2>(tEnergyVminRate.at(j)) = rate; //les precise
+                    std::get<2>(tEnergyVminRate.at(j)) = rate - diffRate * (v - vmin);  // more precise
+                    j++;
+                } else
+                    break;
+            }
+            flux = 1E5 * v * fWimpDensity / wimpMass;
+            diffRate =
+                flux *
+                TRestWimpUtils::GetDifferentialCrossSectionNoHelmFormFactor(wimpMass, crossSection, v,
+                                                                            nucl.fAnum) *
+                TRestWimpUtils::GetVelocityDistribution(v, fLabVelocity, fRmsVelocity, fEscapeVelocity);
+            rate += diffRate * velStep;
+        }
+        rate -=
+            diffRate * (v - vMax);  // substract last diffRate*(v - vMax) to obtain the rate from vMin to vMax
+
+        /*obtain the rate (integral from each vMin to vMax) by substracting integral from minimun vMin to each
+           vMin to the integral from minimun vMin to vMax
+                idem: integral_vMin^vMax = integral_min(vMin)^vMax - integral_min(vMin)^vMin */
+        for (auto& [E, vmin, r] : tEnergyVminRate) {
+            if (vmin > vMax) continue;  // r=0
+            const double formFactor = TRestWimpUtils::GetHelmFormFactor(E, nucl.fAnum);
+            r = (rate - r) * formFactor * formFactor * TRestWimpUtils::SECONDS_PER_DAY * nNuclei;
+        }
+
+        // copy results to recoilMap
+        j = 0;
+        for (int i = 0; i < recoilSpc->GetNbinsX(); i++) {
+            const double recoilEnergy = recoilSpc->GetBinCenter(i);
+            // const double recoilRate = std::get<2> (tEnergyVminRate.at(i));
+            while (j < (int)tEnergyVminRate.size()) {
+                if (recoilEnergy == std::get<0>(tEnergyVminRate.at(j))) {
+                    recoilSpc->SetBinContent(i, std::get<2>(tEnergyVminRate.at(j)));
+                    j++;
+                } else
+                    break;
+            }
+        }
+
         recoilMap[std::string(nucl.fNucleusName)] = recoilSpc;
     }
-
     return recoilMap;
 }
 
@@ -211,18 +272,47 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 
     if (fUseQuenchingFactor) CalculateQuenchingFactor();
 
-    const int nBins = (fEnergySpectra.Y() - fEnergySpectra.X()) / fEnergySpectraStep;
+    if (!isEnergySpectraWideEnough()) {
+        RESTError << "Energy spectra range is not wide enough to match the energy range given." << RESTendl;
+        // return 0;
+    }
 
-    TH1D recoilSpc("recoilSpc", "recoilSpc", nBins, fEnergySpectra.X(), fEnergySpectra.Y());
+    double nMeas = 0;
+
+    const double crossSection = 1E-45;
+    auto rSpc = GetRecoilSpectra(wimpMass, crossSection);
+
+    for (auto& nucl : fNuclei) {
+        auto recoilSpc = rSpc[std::string(nucl.fNucleusName)];
+
+        for (int i = 1; i < recoilSpc->GetNbinsX(); i++) {
+            double recoilEnergy = recoilSpc->GetBinCenter(i);
+            const double recoilRate = recoilSpc->GetBinContent(i);
+
+            if (fUseQuenchingFactor)
+                recoilEnergy *= quenchingFactor[std::string(nucl.fNucleusName)]->GetBinContent(i);
+
+            if (recoilEnergy < fEnergyRange.X() || recoilEnergy > fEnergyRange.Y()) continue;
+            nMeas += recoilRate * fEnergySpectraStep;
+        }
+    }
 
     double bckCounts = 0;
 
-    for (int i = 1; i < recoilSpc.GetNbinsX(); i++) {
-        const double en = recoilSpc.GetBinCenter(i);
+    auto recSpc = rSpc[std::string(fNuclei.front().fNucleusName)];
+    for (int i = 1; i < recSpc->GetNbinsX(); i++) {
+        const double en = recSpc->GetBinCenter(i);
         if (en < fEnergyRange.X() || en > fEnergyRange.Y()) continue;
         bckCounts += fBackground * fEnergySpectraStep;
     }
     bckCounts *= fExposure;
+
+    for (auto& [name, histo] : rSpc) delete histo;
+    rSpc.clear();
+
+    RESTExtreme << "nMeas = " << nMeas << " c/kg/day" << RESTendl;
+    RESTExtreme << "bckCounts = " << bckCounts << RESTendl;
+    if (nMeas == 0) return 0;
 
     double signalCounts = 0, prob = 0;
 
@@ -237,34 +327,9 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
         signalCounts++;
     } while (fabs(prob - 0.1) > 0.01 && signalCounts < 1E6);
 
-    double nMeas = 0;
-    const double crossSection = 1E-45;
-
-    for (auto& nucl : fNuclei) {
-        recoilSpc.Reset();
-
-        for (int i = 1; i < recoilSpc.GetNbinsX(); i++) {
-            const double recoilEnergy = recoilSpc.GetBinCenter(i);
-            const double recoilRate =
-                TRestWimpUtils::GetRecoilRate(wimpMass, crossSection, recoilEnergy, nucl.fAnum, fLabVelocity,
-                                              fRmsVelocity, fEscapeVelocity, fWimpDensity, nucl.fAbundance);
-            recoilSpc.SetBinContent(i, recoilRate);
-        }
-
-        for (int i = 1; i < recoilSpc.GetNbinsX(); i++) {
-            double recoilEnergy = recoilSpc.GetBinCenter(i);
-            // const double recoilRate = recoilSpc.GetBinContent(i);
-            if (fUseQuenchingFactor)
-                recoilEnergy *= quenchingFactor[std::string(nucl.fNucleusName)]->GetBinContent(i);
-
-            if (recoilEnergy < fEnergyRange.X() || recoilEnergy > fEnergyRange.Y()) continue;
-            nMeas += recoilSpc.GetBinContent(i) * fEnergySpectraStep;
-        }
-    }
-
-    if (nMeas == 0) return 0;
-
     const double sensitivity = signalCounts * 1E-45 / (nMeas * fExposure);
+
+    RESTExtreme << "sigCounts = " << signalCounts << RESTendl;
 
     return sensitivity;
 }
@@ -274,7 +339,17 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 /// stores in a map
 ///
 void TRestWimpSensitivity::CalculateQuenchingFactor() {
-    if (!quenchingFactor.empty()) return;
+    // do not calculate if already calculated (with same energy spectra limits)
+    if (!quenchingFactor.empty()) {
+        bool same = true;
+        for (auto& [name, histo] : quenchingFactor)
+            if (histo->GetXaxis()->GetXmin() != fEnergySpectra.X() ||
+                histo->GetXaxis()->GetXmax() != fEnergySpectra.Y()) {
+                same = false;
+                break;
+            }
+        if (same) return;
+    }
 
     std::cout << "Calculating quenching factor " << std::endl;
 
@@ -296,6 +371,21 @@ void TRestWimpSensitivity::CalculateQuenchingFactor() {
     }
 }
 
+bool TRestWimpSensitivity::isEnergySpectraWideEnough() {
+    if (!fUseQuenchingFactor)
+        return fEnergySpectra.X() <= fEnergyRange.X() && fEnergySpectra.Y() >= fEnergyRange.Y();
+
+    CalculateQuenchingFactor();
+    for (auto& nucl : fNuclei) {
+        auto qf = quenchingFactor[std::string(nucl.fNucleusName)];
+        // assuming that Energy_nr * QF(Energy_nr) is a monotonically increasing function
+        if (qf->GetBinContent(1) * qf->GetBinCenter(1) > fEnergyRange.X() ||
+            qf->GetBinContent(qf->GetNbinsX() - 1) * qf->GetBinCenter(qf->GetNbinsX() - 1) < fEnergyRange.Y())
+            return false;
+    }
+    return true;
+}
+
 ///////////////////////////////////////////////
 /// \brief Return output file format with different
 /// parameters used in the calculation.
@@ -309,6 +399,7 @@ const std::string TRestWimpSensitivity::BuildOutputFileName(const std::string& e
     ss << "WD_" << fWimpDensity << "_";
     ss << "Vel_" << fLabVelocity << "_" << fRmsVelocity << "_" << fEscapeVelocity << "_";
     ss << "Bck_" << fBackground << "_";
+    ss << "Exp_" << fExposure << "_";
     ss << "RecEn_" << fEnergySpectra.X() << "_" << fEnergySpectra.Y() << "_" << fEnergySpectraStep << "_";
     ss << "EnRange_" << fEnergyRange.X() << "_" << fEnergyRange.Y() << "_";
 
@@ -366,6 +457,6 @@ void TRestWimpSensitivity::PrintMetadata() {
                  << ") Step: " << fEnergySpectraStep << " keV" << RESTendl;
     RESTMetadata << "Sensitivity energy range: (" << fEnergyRange.X() << ", " << fEnergyRange.Y() << ") keV"
                  << RESTendl;
-    RESTMetadata << "Use quenching factor: " << fUseQuenchingFactor << RESTendl;
+    RESTMetadata << "Use quenching factor: " << (fUseQuenchingFactor ? "true" : "false") << RESTendl;
     RESTMetadata << "+++++" << RESTendl;
 }
