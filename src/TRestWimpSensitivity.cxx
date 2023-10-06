@@ -211,7 +211,7 @@ std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double
         int j = 0;
         double flux = 0, diffRate = 0, v = 0;
         // vMax+velStep to save the rate when v is in interval (vMax-velStep, vMax]
-        for (v = vMin; v < vMax + velStep; v += velStep) { 
+        for (v = vMin; v < vMax + velStep; v += velStep) {
             // save (in 3rd element of tEnergyVminRate tuples) the integral from minimun vMin to each vMin,
             // idem integral_min(vMin)^vMin
             while (j < (int)tEnergyVminRate.size()) {
@@ -224,14 +224,16 @@ std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double
                     break;
             }
             flux = 1E5 * v * fWimpDensity / wimpMass;
-            diffRate = flux *
+            diffRate =
+                flux *
                 TRestWimpUtils::GetDifferentialCrossSectionNoHelmFormFactor(wimpMass, crossSection, v,
                                                                             nucl.fAnum) *
                 TRestWimpUtils::GetVelocityDistribution(v, fLabVelocity, fRmsVelocity, fEscapeVelocity);
             rate += diffRate * velStep;
         }
-        rate -= diffRate*(v - vMax); //substract last diffRate*(v - vMax) to obtain the rate from vMin to vMax
-        
+        rate -=
+            diffRate * (v - vMax);  // substract last diffRate*(v - vMax) to obtain the rate from vMin to vMax
+
         /*obtain the rate (integral from each vMin to vMax) by substracting integral from minimun vMin to each
            vMin to the integral from minimun vMin to vMax
                 idem: integral_vMin^vMax = integral_min(vMin)^vMax - integral_min(vMin)^vMin */
@@ -272,7 +274,7 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 
     if (!isEnergySpectraWideEnough()) {
         RESTError << "Energy spectra range is not wide enough to match the energy range given." << RESTendl;
-        //return 0;
+        // return 0;
     }
 
     double nMeas = 0;
@@ -308,8 +310,8 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
     for (auto& [name, histo] : rSpc) delete histo;
     rSpc.clear();
 
-    RESTExtreme << "nMeas = "<< nMeas << " c/kg/day" << RESTendl;
-    RESTExtreme << "bckCounts = "<< bckCounts << RESTendl;
+    RESTExtreme << "nMeas = " << nMeas << " c/kg/day" << RESTendl;
+    RESTExtreme << "bckCounts = " << bckCounts << RESTendl;
     if (nMeas == 0) return 0;
 
     double signalCounts = 0, prob = 0;
@@ -327,8 +329,8 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 
     const double sensitivity = signalCounts * 1E-45 / (nMeas * fExposure);
 
-    RESTExtreme << "sigCounts = "<< signalCounts << RESTendl;
-    
+    RESTExtreme << "sigCounts = " << signalCounts << RESTendl;
+
     return sensitivity;
 }
 
@@ -338,11 +340,11 @@ const Double_t TRestWimpSensitivity::GetSensitivity(const double wimpMass) {
 ///
 void TRestWimpSensitivity::CalculateQuenchingFactor() {
     // do not calculate if already calculated (with same energy spectra limits)
-    if (!quenchingFactor.empty()){
+    if (!quenchingFactor.empty()) {
         bool same = true;
         for (auto& [name, histo] : quenchingFactor)
             if (histo->GetXaxis()->GetXmin() != fEnergySpectra.X() ||
-                histo->GetXaxis()->GetXmax() != fEnergySpectra.Y() ){
+                histo->GetXaxis()->GetXmax() != fEnergySpectra.Y()) {
                 same = false;
                 break;
             }
@@ -369,18 +371,17 @@ void TRestWimpSensitivity::CalculateQuenchingFactor() {
     }
 }
 
-
-bool TRestWimpSensitivity::isEnergySpectraWideEnough(){
-    if (!fUseQuenchingFactor) 
+bool TRestWimpSensitivity::isEnergySpectraWideEnough() {
+    if (!fUseQuenchingFactor)
         return fEnergySpectra.X() <= fEnergyRange.X() && fEnergySpectra.Y() >= fEnergyRange.Y();
 
     CalculateQuenchingFactor();
     for (auto& nucl : fNuclei) {
         auto qf = quenchingFactor[std::string(nucl.fNucleusName)];
         // assuming that Energy_nr * QF(Energy_nr) is a monotonically increasing function
-        if ( qf->GetBinContent(1) * qf->GetBinCenter(1) > fEnergyRange.X() ||
-             qf->GetBinContent(qf->GetNbinsX()-1) * qf->GetBinCenter(qf->GetNbinsX()-1) < fEnergyRange.Y() )
-             return false;
+        if (qf->GetBinContent(1) * qf->GetBinCenter(1) > fEnergyRange.X() ||
+            qf->GetBinContent(qf->GetNbinsX() - 1) * qf->GetBinCenter(qf->GetNbinsX() - 1) < fEnergyRange.Y())
+            return false;
     }
     return true;
 }
