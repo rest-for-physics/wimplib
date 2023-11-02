@@ -21,6 +21,7 @@
  *************************************************************************/
 
 #include <iostream>
+#include <map>
 
 #ifndef RestCore_TRestWimpUtils
 #define RestCore_TRestWimpUtils
@@ -54,7 +55,7 @@ const double GetRecoilRate(const double wimpMass, const double crossSection, con
                            const double Anum, const double vLab, const double vRMS, const double vEscape,
                            const double wimpDensity, const double abundance);
 const double GetQuenchingFactor(const double recoilEnergy, const double Anum, const double Znum);
-
+std::map<std::string, int> ParseChemicalCompound(const std::string& compound);
 }  // namespace TRestWimpUtils
 
 #endif

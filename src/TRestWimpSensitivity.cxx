@@ -68,6 +68,12 @@
 ///        <parameter name="useQuenchingFactor" value="true"/>
 ///    </TRestWimpSensitivity>
 /// \endcode
+/// Other ways to define the target material is through the use of
+/// compounds. Also, the abundances can be given in mol (or volume) using
+/// the parameter *abundanceInMol* instead of *abundance*. Examples for an
+/// Ar+Isobutane mixture at 99% in volume can be found inside the files
+/// 'REST_PATH/source/libraries/wimp/examples/WIMP_compound_1.rml' and
+/// 'REST_PATH/source/libraries/wimp/examples/WIMP_compound_2.rml'.
 ///
 /// Besides target material elements, the other parameters are optional,
 /// and if not provided they will take their default values.
@@ -161,17 +167,113 @@ void TRestWimpSensitivity::InitFromConfigFile() {
 ///
 void TRestWimpSensitivity::ReadNuclei() {
     fNuclei.clear();
+    bool anyAbundanceGivenInMol = false;
 
+    // Read nuclei (standalone given) elements
     TiXmlElement* ElementDef = GetElement("addElement");
     while (ElementDef) {
         TRestWimpNucleus nucleus;
         nucleus.fNucleusName = GetFieldValue("nucleusName", ElementDef);
         nucleus.fAnum = StringToDouble(GetFieldValue("anum", ElementDef));
         nucleus.fZnum = StringToInteger(GetFieldValue("znum", ElementDef));
-        nucleus.fAbundance = StringToDouble(GetFieldValue("abundance", ElementDef));
+
+        std::string el = !ElementDef->Attribute("abundance") ? "Not defined" : ElementDef->Attribute("abundance");
+        if (!(el.empty() || el == "Not defined")) nucleus.fAbundance = StringToDouble(el);
+
+        el = !ElementDef->Attribute("abundanceInMol") ? "Not defined" : ElementDef->Attribute("abundanceInMol");
+        if (!(el.empty() || el == "Not defined")) {
+            nucleus.fAbundanceMol = StringToDouble(el);
+            anyAbundanceGivenInMol = true;
+        }
+
+        if (nucleus.fAbundance == 0 || nucleus.fAbundanceMol == 0) {
+            if (nucleus.fAbundance == 0)
+                nucleus.fAbundance = nucleus.fAbundanceMol * nucleus.fAnum;
+            else if (nucleus.fAbundanceMol == 0)
+                nucleus.fAbundanceMol = nucleus.fAbundance / nucleus.fAnum;
+            else
+                RESTError << "abundance or abundanceInMol not defined for nucleus "
+                          << nucleus.fNucleusName << RESTendl;
+        }
         fNuclei.emplace_back(nucleus);
         ElementDef = GetNextElement(ElementDef);
     }
+
+    // Read nuclei (compound form given) elements
+    TiXmlElement* CompoundDef = GetElement("addCompound");
+    while (CompoundDef) {
+
+        bool compoundAbundanceGivenInMol = false;
+        std::string compoundName = GetFieldValue("compoundName", CompoundDef);
+        double compoundAbundance = 0, compoundAbundanceInMol = 0;
+        double totalMolMass = 0;
+
+        std::string el = !CompoundDef->Attribute("abundance") ? "Not defined" : CompoundDef->Attribute("abundance");
+        if (!(el.empty() || el == "Not defined")) compoundAbundance = StringToDouble(el);
+
+        el = !CompoundDef->Attribute("abundanceInMol") ? "Not defined" : CompoundDef->Attribute("abundanceInMol");
+        if (!(el.empty() || el == "Not defined")) {
+            compoundAbundanceInMol = StringToDouble(el);
+            compoundAbundanceGivenInMol = true;
+            anyAbundanceGivenInMol = true;
+        }
+
+        if (compoundAbundance == 0 && compoundAbundanceInMol == 0) {
+            RESTWarning << "abundance or abundanceInMol not defined for compound " << compoundName
+                        << ". Setting its abundanceInMol to 1 " << RESTendl;
+            compoundAbundanceInMol = 1;
+        }
+
+         // Read nuclei (inside compound) elements
+        TiXmlElement *ElementDef = GetElement("addElement", CompoundDef);
+        int i = 0;
+        while (ElementDef) {
+            i++;
+            TRestWimpNucleus nucleus;
+            nucleus.fNucleusName = GetFieldValue("nucleusName", ElementDef);
+            nucleus.fAnum = StringToDouble(GetFieldValue("anum", ElementDef));
+            nucleus.fZnum = StringToInteger(GetFieldValue("znum", ElementDef));
+            totalMolMass += nucleus.fAnum * nucleus.GetStechiometricFactorFromCompound(compoundName);
+
+            fNuclei.emplace_back(nucleus);
+            ElementDef = GetNextElement(ElementDef);
+        }
+        if (compoundAbundanceGivenInMol)
+            compoundAbundance = compoundAbundanceInMol * totalMolMass;
+        else
+            compoundAbundanceInMol = compoundAbundance / totalMolMass;
+        // Set the compound abundance to all nuclei elements inside the compound
+        for (auto it = fNuclei.end() -i; it != fNuclei.end(); it++) {
+            auto& nucleus = *it;
+            int stechiometricFactor = nucleus.GetStechiometricFactorFromCompound(compoundName);
+            nucleus.fAbundanceMol = compoundAbundanceInMol * stechiometricFactor;
+            nucleus.fAbundance = nucleus.fAbundanceMol * nucleus.fAnum;
+        }
+
+        CompoundDef = GetNextElement(CompoundDef);
+    }
+
+    // Merge the repeated nuclei (same name, anum and znum) by summing their abundances
+    std::map<std::tuple<TString, Double_t, Int_t>, TRestWimpNucleus> uniqueNucleiMap;
+    for (const auto& nucleus : fNuclei) {
+        auto key = std::make_tuple(nucleus.fNucleusName, nucleus.fAnum, nucleus.fZnum);
+        if (uniqueNucleiMap.find(key) != uniqueNucleiMap.end()) {
+            uniqueNucleiMap[key].fAbundance += nucleus.fAbundance;
+            uniqueNucleiMap[key].fAbundanceMol += nucleus.fAbundanceMol;
+        } else uniqueNucleiMap[key] = nucleus;
+    }
+    fNuclei.clear();
+    for (const auto& entry : uniqueNucleiMap)
+        fNuclei.push_back(entry.second);
+
+    //normalize fAbundance (in mass only) if anyAbundanceGivenInMol
+    if (anyAbundanceGivenInMol){
+        double sumMass = 0;
+        for (auto& nucl : fNuclei) sumMass += nucl.fAbundance;
+        for (auto& nucl : fNuclei) nucl.fAbundance /= sumMass;
+    }
+
+    for (auto& nucl : fNuclei) nucl.PrintNucleus();
 }
 
 ///////////////////////////////////////////////
