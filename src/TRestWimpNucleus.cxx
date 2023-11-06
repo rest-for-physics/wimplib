@@ -40,9 +40,9 @@
 ///
 
 #include "TRestWimpNucleus.h"
-#include "TRestWimpUtils.h"
 
 #include "TRestMetadata.h"
+#include "TRestWimpUtils.h"
 
 ClassImp(TRestWimpNucleus);
 
@@ -67,7 +67,6 @@ void TRestWimpNucleus::PrintNucleus() {
 }
 
 int TRestWimpNucleus::GetStechiometricFactorFromCompound(const std::string& compound) {
-
     auto elementMap = TRestWimpUtils::ParseChemicalCompound(compound);
 
     int stechiometricFactor = 0;
@@ -79,6 +78,6 @@ int TRestWimpNucleus::GetStechiometricFactorFromCompound(const std::string& comp
     }
     if (stechiometricFactor == 0)
         RESTWarning << "No nucleus " << fNucleusName.Data() << " founnd in compound " << compound << RESTendl;
-    
+
     return stechiometricFactor;
 }

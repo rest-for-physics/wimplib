@@ -221,8 +221,8 @@ std::map<std::string, int> TRestWimpUtils::ParseChemicalCompound(const std::stri
     std::map<std::string, int> elementMap;
     std::string elementName;
     int coefficient = 1;
-    
-    for (size_t i = 0; i < compound.size(); ) {
+
+    for (size_t i = 0; i < compound.size();) {
         // Check for uppercase letter (start of an element)
         if (std::isupper(compound[i])) {
             elementName = compound[i];
@@ -244,15 +244,14 @@ std::map<std::string, int> TRestWimpUtils::ParseChemicalCompound(const std::stri
             }
             // Add the element and coefficient to the map
             elementMap[elementName] += coefficient;
-        }
-        else if (compound[i] == '(') { // Check for a subCompound inside parentheses
+        } else if (compound[i] == '(') {  // Check for a subCompound inside parentheses
             i++;
             std::string subCompound;
             while (i < compound.size() && compound[i] != ')') {
                 subCompound += compound[i];
                 i++;
             }
-            i++; // Move past the closing parenthesis
+            i++;  // Move past the closing parenthesis
             // Find the subscript after the closing parenthesis
             coefficient = 1;
             if (i < compound.size() && std::isdigit(compound[i])) {
@@ -267,8 +266,7 @@ std::map<std::string, int> TRestWimpUtils::ParseChemicalCompound(const std::stri
             for (auto& pair : subElementMap) {
                 elementMap[pair.first] += pair.second * coefficient;
             }
-        }
-        else 
+        } else
             i++;
     }
     return elementMap;
