@@ -223,9 +223,9 @@ const double TRestWimpUtils::GetQuenchingFactor(const double recoilEnergy, const
 std::map<std::string, int> TRestWimpUtils::ParseChemicalCompound(const std::string& compound) {
     std::map<std::string, int> elementMap;
     std::string elementName;
-    int coefficient = 1;
 
     for (size_t i = 0; i < compound.size();) {
+        int coefficient = 1;
         // Check for uppercase letter (start of an element)
         if (std::isupper(compound[i])) {
             elementName = compound[i];
