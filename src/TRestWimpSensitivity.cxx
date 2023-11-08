@@ -37,6 +37,8 @@
 /// - *anum* : Atomic number of the nucleus
 /// - *znum* : Number of protons in the nucleus
 /// - *abundance* : Mass percentage of the nucleus in the target material.
+/// - *abundanceInMol* : Mol (or volume) percentage of the nucleus in the
+/// target material.
 /// - *wimpDensity* : WIMP density in the DM halo in GeV/cm3
 /// - *labVelocity* : WIMP velocity in the lab (Earth) frame reference
 /// in km/s
@@ -282,7 +284,8 @@ void TRestWimpSensitivity::ReadNuclei() {
 ///////////////////////////////////////////////
 /// \brief Get recoil spectra for a given WIMP
 /// mass and cross section
-/// Better performance version
+/// Better performance version (velocity integral
+/// is done only once for all recoil energies).
 ///
 std::map<std::string, TH1D*> TRestWimpSensitivity::GetRecoilSpectra(const double wimpMass,
                                                                     const double crossSection) {

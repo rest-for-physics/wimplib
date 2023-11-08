@@ -66,6 +66,12 @@ void TRestWimpNucleus::PrintNucleus() {
     RESTMetadata << "-----------------------------" << RESTendl;
 }
 
+///////////////////////////////////////////////
+/// \brief Get the stechiometric factor of this nucleus in a given compound.
+///
+/// \param compound The compound to be parsed. See
+/// TRestWimpUtils::ParseChemicalCompound for the compound format.
+///
 int TRestWimpNucleus::GetStechiometricFactorFromCompound(const std::string& compound) {
     auto elementMap = TRestWimpUtils::ParseChemicalCompound(compound);
 

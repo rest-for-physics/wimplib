@@ -215,7 +215,10 @@ const double TRestWimpUtils::GetQuenchingFactor(const double recoilEnergy, const
 /// subCompound. The subCompound can have a
 /// coefficient after the closing parenthesis.
 /// The function is recursive, so subCompounds
-/// can contain subCompounds.
+/// can contain subCompounds. Examples:
+/// "H2O" -> {"H": 2, "O": 1}
+/// "Ne98(C4H10)2" -> {"Ne": 98, "C": 8, "H": 20}
+/// "C6H5CH(CH3)2" -> {"C": 9, "H": 12}
 ///
 std::map<std::string, int> TRestWimpUtils::ParseChemicalCompound(const std::string& compound) {
     std::map<std::string, int> elementMap;
