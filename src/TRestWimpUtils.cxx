@@ -223,6 +223,17 @@ const double TRestWimpUtils::GetQuenchingFactor(const double recoilEnergy, const
 std::map<std::string, int> TRestWimpUtils::ParseChemicalCompound(const std::string& compound) {
     std::map<std::string, int> elementMap;
     std::string elementName;
+    // Get the number of opnening and closing parentheses
+    std::pair<int, int> parenthesisCount = {0, 0};
+    for (size_t i = 0; i < compound.size();) {
+        if (compound[i] == '(') parenthesisCount.first++;
+        if (compound[i] == ')') parenthesisCount.second++;
+        i++;
+    }
+    if (parenthesisCount.first != parenthesisCount.second) {
+        std::cout << "Error: Parentheses in compound " << compound << " do not match." << std::endl;
+        return elementMap;  // empty map
+    }
 
     for (size_t i = 0; i < compound.size();) {
         int coefficient = 1;
@@ -250,7 +261,13 @@ std::map<std::string, int> TRestWimpUtils::ParseChemicalCompound(const std::stri
         } else if (compound[i] == '(') {  // Check for a subCompound inside parentheses
             i++;
             std::string subCompound;
-            while (i < compound.size() && compound[i] != ')') {
+            while (i < compound.size()) {
+                if (compound[i] == ')') {
+                    if (parenthesisCount.second > 1)
+                        parenthesisCount.second--;
+                    else
+                        break;
+                }
                 subCompound += compound[i];
                 i++;
             }
