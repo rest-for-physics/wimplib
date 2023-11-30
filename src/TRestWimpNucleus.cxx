@@ -42,10 +42,17 @@
 #include "TRestWimpNucleus.h"
 
 #include "TRestMetadata.h"
+#include "TRestWimpUtils.h"
 
 ClassImp(TRestWimpNucleus);
 
-TRestWimpNucleus::TRestWimpNucleus() {}
+TRestWimpNucleus::TRestWimpNucleus() {
+    fNucleusName = "";
+    fAnum = 0;
+    fZnum = 0;
+    fAbundance = 0;
+    fAbundanceMol = 0;
+}
 
 TRestWimpNucleus::~TRestWimpNucleus() {}
 
@@ -55,5 +62,28 @@ void TRestWimpNucleus::PrintNucleus() {
     RESTMetadata << "Atomic number " << fAnum << RESTendl;
     RESTMetadata << "Number of protons " << fZnum << RESTendl;
     RESTMetadata << "Abundance " << fAbundance << RESTendl;
+    RESTMetadata << "Abundance (mol) " << fAbundanceMol << RESTendl;
     RESTMetadata << "-----------------------------" << RESTendl;
+}
+
+///////////////////////////////////////////////
+/// \brief Get the stechiometric factor of this nucleus in a given compound.
+///
+/// \param compound The compound to be parsed. See
+/// TRestWimpUtils::ParseChemicalCompound for the compound format.
+///
+int TRestWimpNucleus::GetStechiometricFactorFromCompound(const std::string& compound) {
+    auto elementMap = TRestWimpUtils::ParseChemicalCompound(compound);
+
+    int stechiometricFactor = 0;
+    for (auto& pair : elementMap) {
+        if (pair.first == fNucleusName.Data()) {
+            stechiometricFactor = pair.second;
+            break;
+        }
+    }
+    if (stechiometricFactor == 0)
+        RESTWarning << "No nucleus " << fNucleusName.Data() << " founnd in compound " << compound << RESTendl;
+
+    return stechiometricFactor;
 }

@@ -38,8 +38,11 @@ class TRestWimpNucleus {
     Int_t fZnum;
     /// Abundance, in mass percentage
     Double_t fAbundance;
+    /// Abundance, in mole (or volume)
+    Double_t fAbundanceMol;
 
     void PrintNucleus();
+    int GetStechiometricFactorFromCompound(const std::string& compound);
 
     // Constructor
     TRestWimpNucleus();
@@ -47,7 +50,7 @@ class TRestWimpNucleus {
     // Destructor
     virtual ~TRestWimpNucleus();
 
-    ClassDef(TRestWimpNucleus, 1);
+    ClassDef(TRestWimpNucleus, 2);
 };
 
 #endif

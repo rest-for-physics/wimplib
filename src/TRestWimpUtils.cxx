@@ -207,3 +207,87 @@ const double TRestWimpUtils::GetQuenchingFactor(const double recoilEnergy, const
 
     return (1 + g) / g;
 }
+
+//////////////////////////////////////////////////
+/// \brief Parse a chemical compound into a map
+/// of elements and coefficients. The compound
+/// can contain parentheses to indicate a
+/// subCompound. The subCompound can have a
+/// coefficient after the closing parenthesis.
+/// The function is recursive, so subCompounds
+/// can contain subCompounds. Examples:
+/// "H2O" -> {"H": 2, "O": 1}
+/// "Ne98(C4H10)2" -> {"Ne": 98, "C": 8, "H": 20}
+/// "C6H5CH(CH3)2" -> {"C": 9, "H": 12}
+///
+std::map<std::string, int> TRestWimpUtils::ParseChemicalCompound(const std::string& compound) {
+    std::map<std::string, int> elementMap;
+    std::string elementName;
+    // Get the number of opnening and closing parentheses
+    std::pair<int, int> parenthesisCount = {0, 0};
+    for (size_t i = 0; i < compound.size();) {
+        if (compound[i] == '(') parenthesisCount.first++;
+        if (compound[i] == ')') parenthesisCount.second++;
+        i++;
+    }
+    if (parenthesisCount.first != parenthesisCount.second) {
+        std::cout << "Error: Parentheses in compound " << compound << " do not match." << std::endl;
+        return elementMap;  // empty map
+    }
+
+    for (size_t i = 0; i < compound.size();) {
+        int coefficient = 1;
+        // Check for uppercase letter (start of an element)
+        if (std::isupper(compound[i])) {
+            elementName = compound[i];
+            i++;
+
+            // Check for lowercase letters (additional characters in element name)
+            while (i < compound.size() && std::islower(compound[i])) {
+                elementName += compound[i];
+                i++;
+            }
+
+            // Check for a number (coefficient)
+            if (i < compound.size() && std::isdigit(compound[i])) {
+                coefficient = 0;
+                while (i < compound.size() && std::isdigit(compound[i])) {
+                    coefficient = coefficient * 10 + (compound[i] - '0');
+                    i++;
+                }
+            }
+            // Add the element and coefficient to the map
+            elementMap[elementName] += coefficient;
+        } else if (compound[i] == '(') {  // Check for a subCompound inside parentheses
+            i++;
+            std::string subCompound;
+            while (i < compound.size()) {
+                if (compound[i] == ')') {
+                    if (parenthesisCount.second > 1)
+                        parenthesisCount.second--;
+                    else
+                        break;
+                }
+                subCompound += compound[i];
+                i++;
+            }
+            i++;  // Move past the closing parenthesis
+            // Find the subscript after the closing parenthesis
+            coefficient = 1;
+            if (i < compound.size() && std::isdigit(compound[i])) {
+                coefficient = 0;
+                while (i < compound.size() && std::isdigit(compound[i])) {
+                    coefficient = coefficient * 10 + (compound[i] - '0');
+                    i++;
+                }
+            }
+            // Recursively call the function to handle the subCompound
+            std::map<std::string, int> subElementMap = ParseChemicalCompound(subCompound);
+            for (auto& pair : subElementMap) {
+                elementMap[pair.first] += pair.second * coefficient;
+            }
+        } else
+            i++;
+    }
+    return elementMap;
+}
