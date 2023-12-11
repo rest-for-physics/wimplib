@@ -31,15 +31,15 @@
 class TRestWimpNucleus {
    public:
     /// Nucleus name
-    TString fNucleusName;
+    TString fNucleusName = "";
     /// Atomic number in amus
-    Double_t fAnum;
+    Double_t fAnum = 0;
     /// Number of protons
-    Int_t fZnum;
+    Int_t fZnum = 0;
     /// Abundance, in mass percentage
-    Double_t fAbundance;
+    Double_t fAbundance = 0;
     /// Abundance, in mole (or volume)
-    Double_t fAbundanceMol;
+    Double_t fAbundanceMol = 0;
 
     void PrintNucleus();
     int GetStechiometricFactorFromCompound(const std::string& compound);

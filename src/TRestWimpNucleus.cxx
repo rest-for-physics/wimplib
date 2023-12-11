@@ -46,13 +46,7 @@
 
 ClassImp(TRestWimpNucleus);
 
-TRestWimpNucleus::TRestWimpNucleus() {
-    fNucleusName = "";
-    fAnum = 0;
-    fZnum = 0;
-    fAbundance = 0;
-    fAbundanceMol = 0;
-}
+TRestWimpNucleus::TRestWimpNucleus() {}
 
 TRestWimpNucleus::~TRestWimpNucleus() {}
 
